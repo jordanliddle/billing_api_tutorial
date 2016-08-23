@@ -104,7 +104,7 @@ class GiftBasket < Sinatra::Base
 
         # if the new RecurringApplicationCharge saves, we redirect to the confirmation URL
         if @recurring_application_charge.save
-            redirect @recurring_application_charge.confirmation_url
+          redirect @recurring_application_charge.confirmation_url
         end
       end
     end
@@ -158,9 +158,6 @@ class GiftBasket < Sinatra::Base
     else
       return [403, "You're not authorized to perform this action."]
     end
-
-    # charge fee with the UsageCharge endpoint
-    create_usage_charge
 
     # parse the request body as JSON data
     json_data = JSON.parse data
