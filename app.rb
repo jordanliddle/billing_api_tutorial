@@ -99,6 +99,7 @@ class GiftBasket < Sinatra::Base
                 price: 4.99,
                 return_url: "https:\/\/jordo.ngrok.io\/activatecharge",
                 test: true,
+                trial_days: 7,
                 capped_amount: 100,
                 terms: "$1 for every order created")
 
@@ -159,6 +160,7 @@ class GiftBasket < Sinatra::Base
       return [403, "You're not authorized to perform this action."]
     end
 
+    create_usage_charge
     # parse the request body as JSON data
     json_data = JSON.parse data
 
