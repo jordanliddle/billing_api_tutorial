@@ -22,6 +22,7 @@ class GiftBasket < Sinatra::Base
     install_url = "http://#{shop}/admin/oauth/authorize?client_id=#{@key}"\
                 "&scope=#{scopes}&redirect_uri=https://#{@app_url}/giftbasket/auth"
 
+    # redirect to the install_url
     redirect install_url
   end
 
@@ -31,7 +32,7 @@ class GiftBasket < Sinatra::Base
     code = request.params['code']
     hmac = request.params['hmac']
 
-    # perform hmac validation to determine if the request is coming from Shopify
+    # perform hmac validation to determine if the request is coming from Shopify (Should we extract this into it's own function?)
     h = request.params.reject{|k,_| k == 'hmac' || k == 'signature'}
     query = URI.escape(h.sort.collect{|k,v| "#{k}=#{v}"}.join('&'))
     digest = OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha256'), @secret, query)
@@ -67,7 +68,7 @@ class GiftBasket < Sinatra::Base
     # now that the session is activated, we can create a recurring application charge
     create_recurring_application_charge
 
-    # we want to redirect to the bulk edit URL if there is a token and an activated session
+    # we want to redirect to the bulk edit URL if there is a token and an activated session and an activated RecurringApplicationCharge
     redirect bulk_edit_url
   end
 
@@ -75,7 +76,7 @@ class GiftBasket < Sinatra::Base
     # store the charge_id from the request
     charge_id  = request.params['charge_id']
     recurring_application_charge = ShopifyAPI::RecurringApplicationCharge.find(charge_id)
-    recurring_application_charge.status == "accepted" ? recurring_application_charge.activate : "Please accept the charge"
+    recurring_application_charge.status == "accepted" ? recurring_application_charge.activate : return # how to redirect back to confirmation URL so they loop until accept payment
 
     # once the charge is activated, we can subscribe to the order/create webhook and redirect the user back to the bulk edit URL
     create_order_webhook
@@ -103,7 +104,8 @@ class GiftBasket < Sinatra::Base
                 capped_amount: 100,
                 terms: "$1 for every order created")
 
-        # if the new RecurringApplicationCharge saves, we redirect to the confirmation URL
+        # if the new RecurringApplicationCharge saves, we redirect to the confirmation URL,
+        # so the user can accept or decline the charge
         if @recurring_application_charge.save
           redirect @recurring_application_charge.confirmation_url
         end
